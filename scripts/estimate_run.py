@@ -15,7 +15,7 @@ from agentic_cdr.estimate import estimate_run
 def main() -> None:
     parser = argparse.ArgumentParser(description="Estimate AgentCF++ requests and tokens")
     parser.add_argument("--config", required=True)
-    parser.add_argument("--profile", choices=["smoke", "full"], required=True)
+    parser.add_argument("--profile", choices=["trial", "smoke", "full"], required=True)
     args = parser.parse_args()
     print(json.dumps(estimate_run(load_config(args.config), args.profile), indent=2))
 

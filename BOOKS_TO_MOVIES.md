@@ -13,9 +13,16 @@ pip install -r requirements.txt
 
 python scripts/download_amazon2023.py --config configs/books_to_movies.yaml
 python scripts/prepare_pair.py --config configs/books_to_movies.yaml
-python scripts/estimate_run.py --config configs/books_to_movies.yaml --profile smoke
 
 export DEEPSEEK_API_KEY='your-key'
+
+# One user and one training interaction: verify the live API and full pipeline first.
+python scripts/estimate_run.py --config configs/books_to_movies.yaml --profile trial
+python scripts/train_agentcfpp.py --config configs/books_to_movies.yaml --profile trial --resume
+python scripts/evaluate_agentcfpp.py --config configs/books_to_movies.yaml --profile trial --split validation
+
+# The fixed 10-user smoke experiment starts in a separate run.
+python scripts/estimate_run.py --config configs/books_to_movies.yaml --profile smoke
 python scripts/train_agentcfpp.py --config configs/books_to_movies.yaml --profile smoke --resume
 python scripts/evaluate_agentcfpp.py --config configs/books_to_movies.yaml --profile smoke --split validation
 python scripts/evaluate_agentcfpp.py --config configs/books_to_movies.yaml --profile smoke --split test

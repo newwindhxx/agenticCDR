@@ -57,6 +57,11 @@ group_memory:
   recent_items_per_domain: 5
 
 profiles:
+  trial:
+    user_limit: 1
+    max_train_interactions_per_user: 1
+    group_memory: false
+    users_file: users_smoke.json
   smoke:
     user_limit: 10
     max_train_interactions_per_user: 6

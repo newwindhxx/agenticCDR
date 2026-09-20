@@ -493,14 +493,19 @@ def prepare_pair(config: dict[str, Any], force: bool = False) -> dict[str, Any]:
     return manifest
 
 
+def load_profile_user_ids(config: dict[str, Any], profile: dict[str, Any]) -> list[str]:
+    processed = configured_path(config, "processed_dir")
+    user_file = processed / str(profile.get("users_file", f"users_{profile['name']}.json"))
+    with user_file.open("r", encoding="utf-8") as handle:
+        user_ids = [str(value) for value in json.load(handle)]
+    return user_ids[: int(profile["user_limit"])]
+
+
 def load_profile_data(
     config: dict[str, Any], profile: dict[str, Any]
 ) -> tuple[pd.DataFrame, pd.DataFrame, list[str]]:
     processed = configured_path(config, "processed_dir")
-    user_file = processed / f"users_{profile['name']}.json"
-    with user_file.open("r", encoding="utf-8") as handle:
-        user_ids = [str(value) for value in json.load(handle)]
-    user_ids = user_ids[: int(profile["user_limit"])]
+    user_ids = load_profile_user_ids(config, profile)
     frame = pd.read_parquet(processed / "train.parquet")
     frame = frame[frame["user_id"].astype(str).isin(set(user_ids))].copy()
     limit = profile.get("max_train_interactions_per_user")

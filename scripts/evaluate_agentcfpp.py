@@ -15,7 +15,7 @@ from agentic_cdr.evaluation import evaluate
 def main() -> None:
     parser = argparse.ArgumentParser(description="Evaluate frozen AgentCF++ memories on Movies")
     parser.add_argument("--config", required=True)
-    parser.add_argument("--profile", choices=["smoke", "full"], required=True)
+    parser.add_argument("--profile", choices=["trial", "smoke", "full"], required=True)
     parser.add_argument("--split", choices=["validation", "test"], required=True)
     parser.add_argument("--use-group-memory", action="store_true")
     parser.add_argument("--run-id")

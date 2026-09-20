@@ -41,6 +41,15 @@ class FakeEncoder:
         return np.asarray(vectors)
 
 
+def test_one_user_trial_uses_smoke_user_file(synthetic_project):
+    prepare_pair(synthetic_project)
+    llm = ScriptedLLM(responder)
+    context = train(synthetic_project, "trial", run_id="trial-test", llm=llm)
+    assert read_json(context.state_path)["last_completed"] == 0
+    metrics = evaluate(synthetic_project, "trial", "validation", run_id="trial-test", llm=llm)
+    assert metrics["valid_samples"] == 1
+
+
 def test_smoke_training_resume_and_frozen_evaluation(synthetic_project):
     prepare_pair(synthetic_project)
     llm = ScriptedLLM(responder)

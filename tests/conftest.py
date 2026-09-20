@@ -77,6 +77,12 @@ def synthetic_project(tmp_path: Path) -> dict[str, Any]:
         "embedding": {"model": "fake-embedding", "device": "cpu", "batch_size": 8},
         "group_memory": {"random_seed": 42, "max_clusters": 4, "top_groups": 2, "recent_items_per_domain": 2},
         "profiles": {
+            "trial": {
+                "user_limit": 1,
+                "max_train_interactions_per_user": 1,
+                "group_memory": False,
+                "users_file": "users_smoke.json",
+            },
             "smoke": {"user_limit": 1, "max_train_interactions_per_user": 6, "group_memory": False},
             "full": {"user_limit": 2, "max_train_interactions_per_user": None, "group_memory": True},
         },

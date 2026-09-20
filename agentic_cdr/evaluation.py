@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import json
 import math
 from pathlib import Path
 from typing import Any
 
 from .config import configured_path, get_profile
+from .data import load_profile_user_ids
 from .io_utils import atomic_write_json, read_json, read_jsonl, sha256_file, write_jsonl
 from .llm import LLMClient
 from .memory import MemoryStore
@@ -68,8 +68,7 @@ def evaluate(
     store = MemoryStore.load(context.state_path)
     processed = configured_path(config, "processed_dir")
     candidates = read_jsonl(processed / f"candidates_{split}.jsonl")
-    with (processed / f"users_{profile_name}.json").open("r", encoding="utf-8") as handle:
-        user_ids = {str(value) for value in json.load(handle)}
+    user_ids = set(load_profile_user_ids(config, profile))
     candidates = [record for record in candidates if str(record["user_id"]) in user_ids]
     if len(candidates) != len(user_ids):
         raise RuntimeError(
