@@ -1,0 +1,67 @@
+experiment_name: books_to_movies
+source_domain: Books
+target_domain: Movies_and_TV
+seed: 23
+candidate_count: 10
+
+paths:
+  raw_dir: data/raw/amazon2023
+  processed_dir: data/processed/books_to_movies
+  runs_dir: runs
+
+downloads:
+  - name: Books.jsonl.gz
+    url: https://mcauleylab.ucsd.edu/public_datasets/data/amazon_2023/raw/review_categories/Books.jsonl.gz
+    expected_bytes: 6216820644
+  - name: meta_Books.jsonl.gz
+    url: https://mcauleylab.ucsd.edu/public_datasets/data/amazon_2023/raw/meta_categories/meta_Books.jsonl.gz
+    expected_bytes: 4942125770
+  - name: Movies_and_TV.jsonl.gz
+    url: https://mcauleylab.ucsd.edu/public_datasets/data/amazon_2023/raw/review_categories/Movies_and_TV.jsonl.gz
+    expected_bytes: 2396672075
+  - name: meta_Movies_and_TV.jsonl.gz
+    url: https://mcauleylab.ucsd.edu/public_datasets/data/amazon_2023/raw/meta_categories/meta_Movies_and_TV.jsonl.gz
+    expected_bytes: 271381871
+
+data:
+  start_date: '2021-10-01T00:00:00Z'
+  end_date: '2022-03-31T23:59:59.999Z'
+  min_rating: 4.0
+  min_source_train: 3
+  min_target_train: 1
+  min_total_interactions: 10
+  max_total_interactions: 100
+  full_user_count: 100
+  smoke_user_count: 10
+  training_negative_pool_size: 100
+
+llm:
+  provider: deepseek
+  model: deepseek-chat
+  base_url: https://api.deepseek.com
+  api_key_env: DEEPSEEK_API_KEY
+  temperature: 0
+  max_tokens: 800
+  timeout_seconds: 120
+  max_retries: 3
+
+embedding:
+  model: BAAI/bge-small-en-v1.5
+  device: cpu
+  batch_size: 64
+
+group_memory:
+  random_seed: 42
+  max_clusters: 384
+  top_groups: 10
+  recent_items_per_domain: 5
+
+profiles:
+  smoke:
+    user_limit: 10
+    max_train_interactions_per_user: 6
+    group_memory: false
+  full:
+    user_limit: 100
+    max_train_interactions_per_user: null
+    group_memory: true

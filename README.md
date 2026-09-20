@@ -1,4 +1,6 @@
 # AgentCF++
+
+> For the reproducible Books-to-Movies pipeline added by this fork, see [BOOKS_TO_MOVIES.md](BOOKS_TO_MOVIES.md).
  
 AgentCF++ is a Shared Memory Enhanced Collaborative Learning framework with LLMs-Powered Agents designed for Cross-Domain Recommender Systems.
  
