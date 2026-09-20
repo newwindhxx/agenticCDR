@@ -11,7 +11,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 
-python scripts/download_amazon2023.py --config configs/books_to_movies.yaml
+python scripts/download_amazon2023.py --config configs/books_to_movies.yaml --connections 16
 python scripts/prepare_pair.py --config configs/books_to_movies.yaml
 
 export DEEPSEEK_API_KEY='your-key'
@@ -38,6 +38,6 @@ python scripts/build_group_memory.py --config configs/books_to_movies.yaml --pro
 python scripts/evaluate_agentcfpp.py --config configs/books_to_movies.yaml --profile full --split test --use-group-memory
 ```
 
-The downloader resumes `.part` files. Training resumes from an atomic memory
+The downloader uses aria2 with 16 connections and resumes existing `.part` files. Install it with `apt-get install aria2`; use `--connections 1` for the Python fallback. Training resumes from an atomic memory
 state, and validated LLM responses are cached in the run directory. Raw data,
 processed data, caches, memories, and API credentials are ignored by Git.

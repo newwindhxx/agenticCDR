@@ -14,9 +14,17 @@ from agentic_cdr.downloader import download_all
 def main() -> None:
     parser = argparse.ArgumentParser(description="Download the configured Amazon Reviews 2023 files")
     parser.add_argument("--config", required=True)
+    parser.add_argument(
+        "--connections", type=int, default=16,
+        help="Parallel connections per file (1-16; 1 uses the requests fallback)",
+    )
     args = parser.parse_args()
-    for path in download_all(load_config(args.config)):
-        print(path)
+    try:
+        for path in download_all(load_config(args.config), connections=args.connections):
+            print(path)
+    except KeyboardInterrupt:
+        print("\nDownload interrupted; rerun the same command to resume.")
+        raise SystemExit(130)
 
 
 if __name__ == "__main__":
