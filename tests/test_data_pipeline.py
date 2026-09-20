@@ -13,6 +13,7 @@ from agentic_cdr.io_utils import read_json, read_jsonl
 def test_preparation_is_deterministic_and_leak_free(synthetic_project):
     first = prepare_pair(synthetic_project)
     processed = Path(synthetic_project["_project_root"]) / synthetic_project["paths"]["processed_dir"]
+    assert not (processed / ".prepare.sqlite").exists()
     train = pd.read_parquet(processed / "train.parquet")
     validation = {row["user_id"]: row for row in read_jsonl(processed / "validation.jsonl")}
     candidates = read_jsonl(processed / "candidates_test.jsonl")
@@ -43,3 +44,4 @@ def test_preparation_is_deterministic_and_leak_free(synthetic_project):
 
     second = prepare_pair(synthetic_project, force=True)
     assert first["processed_sha256"] == second["processed_sha256"]
+    assert not (processed / ".prepare.sqlite").exists()

@@ -374,12 +374,14 @@ def prepare_pair(config: dict[str, Any], force: bool = False) -> dict[str, Any]:
         raise PreparationError(
             f"Processed outputs already exist ({', '.join(existing)}); use --force to rebuild"
         )
+    database_path = output_dir / ".prepare.sqlite"
     if force:
         for name in declared_outputs:
             (output_dir / name).unlink(missing_ok=True)
-        (output_dir / ".prepare.sqlite").unlink(missing_ok=True)
+        for suffix in ("", "-shm", "-wal"):
+            Path(str(database_path) + suffix).unlink(missing_ok=True)
 
-    connection = _connect(output_dir / ".prepare.sqlite")
+    connection = _connect(database_path)
     review_counts = ingest_reviews(connection, config)
     metadata_counts = ingest_metadata(connection, config)
     eligible = _eligible_users(connection, config)
@@ -490,6 +492,8 @@ def prepare_pair(config: dict[str, Any], force: bool = False) -> dict[str, Any]:
     }
     atomic_write_json(output_dir / "manifest.json", manifest)
     connection.close()
+    for suffix in ("", "-shm", "-wal"):
+        Path(str(database_path) + suffix).unlink(missing_ok=True)
     return manifest
 
 
