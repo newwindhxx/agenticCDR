@@ -78,4 +78,8 @@ def get_profile(config: dict[str, Any], profile: str) -> dict[str, Any]:
 
 def public_config(config: dict[str, Any]) -> dict[str, Any]:
     """Return a serializable config without internal fields or credentials."""
-    return {key: copy.deepcopy(value) for key, value in config.items() if not key.startswith("_")}
+    result = {key: copy.deepcopy(value) for key, value in config.items() if not key.startswith("_")}
+    llm = result.get("llm")
+    if isinstance(llm, dict):
+        llm.pop("api_key", None)
+    return result

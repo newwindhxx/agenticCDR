@@ -74,6 +74,7 @@ class LLMClient:
                 "model": self.settings["model"],
                 "temperature": self.settings.get("temperature", 0),
                 "max_tokens": self.settings.get("max_tokens", 800),
+                "thinking": self.settings.get("thinking"),
                 "prompt": prompt,
                 "purpose": purpose,
                 "attempt": attempt,
@@ -84,12 +85,18 @@ class LLMClient:
         key = self._key(prompt, purpose, attempt)
         if key in self.cache:
             return self.cache[key]
-        response = self.client.chat.completions.create(
-            model=str(self.settings["model"]),
-            messages=[{"role": "user", "content": prompt}],
-            temperature=float(self.settings.get("temperature", 0)),
-            max_tokens=int(self.settings.get("max_tokens", 800)),
-        )
+        request: dict[str, Any] = {
+            "model": str(self.settings["model"]),
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": float(self.settings.get("temperature", 0)),
+            "max_tokens": int(self.settings.get("max_tokens", 800)),
+        }
+        thinking = self.settings.get("thinking")
+        if thinking is not None:
+            request["extra_body"] = {
+                "thinking": {"type": "enabled" if bool(thinking) else "disabled"}
+            }
+        response = self.client.chat.completions.create(**request)
         if not response.choices or response.choices[0].message.content is None:
             raise LLMError(f"Empty response for {purpose}")
         text = response.choices[0].message.content.strip()
