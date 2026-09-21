@@ -65,8 +65,11 @@ class LLMClient:
         self.cache: dict[str, str] = {}
         if self.cache_path.exists():
             for record in iter_jsonl(self.cache_path):
+                key = str(record["key"])
                 if record.get("status") == "ok":
-                    self.cache[str(record["key"])] = str(record["response"])
+                    self.cache[key] = str(record["response"])
+                elif record.get("status") == "invalid":
+                    self.cache.pop(key, None)
 
     def _key(self, prompt: str, purpose: str, attempt: int) -> str:
         return sha256_json(
@@ -119,6 +122,21 @@ class LLMClient:
         self.cache[key] = text
         return text
 
+    def _invalidate(self, prompt: str, purpose: str, attempt: int, error: Exception) -> None:
+        key = self._key(prompt, purpose, attempt)
+        self.cache.pop(key, None)
+        append_jsonl(
+            self.cache_path,
+            {
+                "key": key,
+                "model": self.settings["model"],
+                "purpose": purpose,
+                "attempt": attempt,
+                "status": "invalid",
+                "error": str(error),
+            },
+        )
+
     def call_json(
         self,
         prompt: str,
@@ -132,13 +150,28 @@ class LLMClient:
             if attempt:
                 retry_note = (
                     "\n\nYour previous response did not match the required JSON schema. "
-                    "Return exactly one valid JSON object with every required field and no markdown."
+                    "Return exactly one valid JSON object with every required field and no markdown. "
+                    "Keep every string within the prompt's word limit, summarize long inputs, "
+                    "and never copy descriptions or other long passages verbatim."
                 )
-            response = self.complete(prompt + retry_note, purpose, attempt)
-            try:
-                return validator(extract_json_object(response))
-            except (KeyError, TypeError, ValueError) as exc:
-                errors.append(f"attempt {attempt + 1}: {exc}")
+            request_prompt = prompt + retry_note
+            cache_key = self._key(request_prompt, purpose, attempt)
+            was_cached = cache_key in self.cache
+            response = self.complete(request_prompt, purpose, attempt)
+            while True:
+                try:
+                    return validator(extract_json_object(response))
+                except (KeyError, TypeError, ValueError) as exc:
+                    source = "cached" if was_cached else "fresh"
+                    errors.append(f"attempt {attempt + 1} ({source}): {exc}")
+                    self._invalidate(request_prompt, purpose, attempt, exc)
+                    if not was_cached:
+                        break
+                    # A raw response can be cached before schema validation. If an
+                    # interrupted run resumes with such an invalid entry, evict it
+                    # and make one fresh request for the same logical attempt.
+                    was_cached = False
+                    response = self.complete(request_prompt, purpose, attempt)
         raise LLMError(f"Invalid {purpose} response after {max_attempts} attempts: {'; '.join(errors)}")
 
 

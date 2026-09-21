@@ -19,10 +19,42 @@ def test_ranking_validator_rejects_missing_duplicate_or_unknown(ranking):
 
 def test_call_json_retries_invalid_format(monkeypatch):
     client = object.__new__(LLMClient)
-    client.settings = {"max_retries": 3}
+    client.settings = {"model": "deepseek-flash", "max_retries": 3}
+    client.cache = {}
     responses = iter(["not json", '{"value":"ok"} trailing text'])
     monkeypatch.setattr(client, "complete", lambda prompt, purpose, attempt=0: next(responses))
+    monkeypatch.setattr(client, "_invalidate", lambda prompt, purpose, attempt, error: None)
     assert client.call_json("prompt", "test", lambda value: value["value"]) == "ok"
+
+
+def test_call_json_evicts_invalid_cached_response(monkeypatch):
+    client = object.__new__(LLMClient)
+    client.settings = {
+        "model": "deepseek-flash",
+        "max_retries": 3,
+        "max_tokens": 800,
+        "temperature": 0,
+        "thinking": False,
+    }
+    key = client._key("prompt", "test", 0)
+    client.cache = {key: "truncated response"}
+    fresh_calls = []
+
+    def complete(prompt, purpose, attempt=0):
+        response_key = client._key(prompt, purpose, attempt)
+        if response_key in client.cache:
+            return client.cache[response_key]
+        fresh_calls.append((prompt, purpose, attempt))
+        return '{"value":"ok"}'
+
+    def invalidate(prompt, purpose, attempt, error):
+        client.cache.pop(client._key(prompt, purpose, attempt), None)
+
+    monkeypatch.setattr(client, "complete", complete)
+    monkeypatch.setattr(client, "_invalidate", invalidate)
+
+    assert client.call_json("prompt", "test", lambda value: value["value"]) == "ok"
+    assert fresh_calls == [("prompt", "test", 0)]
 
 
 
