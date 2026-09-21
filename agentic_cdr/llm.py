@@ -15,6 +15,24 @@ class LLMError(RuntimeError):
 T = TypeVar("T")
 
 
+def read_api_key(settings: dict[str, Any]) -> str:
+    key_name = str(settings.get("api_key_env", "DEEPSEEK_API_KEY"))
+    api_key = os.environ.get(key_name)
+    if not api_key:
+        raise LLMError(f"Environment variable {key_name} is not set")
+    if not api_key.isascii():
+        raise LLMError(
+            f"Environment variable {key_name} contains non-ASCII characters. "
+            "Set it to the actual API key, not the example placeholder."
+        )
+    if any(character.isspace() for character in api_key):
+        raise LLMError(
+            f"Environment variable {key_name} contains whitespace. "
+            "Re-enter the API key without spaces or line breaks."
+        )
+    return api_key
+
+
 def extract_json_object(text: str) -> dict[str, Any]:
     decoder = json.JSONDecoder()
     for index, character in enumerate(text):
@@ -36,10 +54,7 @@ class LLMClient:
         except ImportError as exc:
             raise LLMError("The openai package is required for DeepSeek calls; install requirements.txt") from exc
         self.settings = dict(settings)
-        key_name = str(settings.get("api_key_env", "DEEPSEEK_API_KEY"))
-        api_key = os.environ.get(key_name)
-        if not api_key:
-            raise LLMError(f"Environment variable {key_name} is not set")
+        api_key = read_api_key(settings)
         self.client = OpenAI(
             api_key=api_key,
             base_url=str(settings["base_url"]),
